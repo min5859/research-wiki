@@ -25,6 +25,8 @@ run.sh (cron 매주 월 09:00 KST)
 ```bash
 git clone git@github.com:min5859/research-wiki.git
 cd research-wiki
+python3 -m venv .venv
+source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
@@ -37,7 +39,7 @@ bash run.sh
 # cron 등록 (매주 월요일 09:00 KST = 00:00 UTC)
 crontab -e
 # 아래 한 줄 추가:
-# 0 0 * * 1 cd /path/to/research-wiki-pipeline && bash run.sh >> logs/cron.log 2>&1
+# 0 0 * * 1 cd /path/to/research-wiki && source .venv/bin/activate && bash run.sh >> logs/cron.log 2>&1
 ```
 
 ## 설정
