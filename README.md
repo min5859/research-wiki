@@ -14,13 +14,35 @@ run.sh (cron 매주 월 09:00 KST)
   └─ 5. publish.py    → GitHub Wiki에 자동 발행
 ```
 
-## 사전 요구사항
+## 새 PC 셋업 가이드
 
-- Python 3.10+
-- [Claude Code CLI](https://docs.anthropic.com/en/docs/claude-code) (인증 완료 상태)
-- Git + SSH Key (GitHub push용)
+### 1. 시스템 요구사항 설치
 
-## 설치
+```bash
+# Python 3.10+ 확인
+python3 --version
+
+# Node.js (Claude Code CLI 설치에 필요)
+node --version
+
+# Claude Code CLI 설치 및 인증
+npm install -g @anthropic-ai/claude-code
+claude  # 최초 실행 시 인증 진행
+```
+
+### 2. SSH Key 설정 (GitHub push용)
+
+```bash
+# 이미 있으면 스킵
+ssh-keygen -t ed25519
+cat ~/.ssh/id_ed25519.pub
+# → https://github.com/settings/keys 에 등록
+
+# 연결 확인
+ssh -T git@github.com
+```
+
+### 3. 프로젝트 클론 및 의존성 설치
 
 ```bash
 git clone git@github.com:min5859/research-wiki.git
@@ -30,16 +52,32 @@ source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
-## 실행
+### 4. Wiki 레포 클론 (publish에 필요)
+
+`publish.py`가 첫 실행 시 자동으로 clone하지만, 미리 준비하려면:
 
 ```bash
-# 수동 실행
-bash run.sh
+mkdir -p data
+git clone git@github.com:min5859/research-wiki.wiki.git data/wiki_clone
+```
 
-# cron 등록 (매주 월요일 09:00 KST = 00:00 UTC)
+### 5. 수동 실행 테스트
+
+```bash
+source .venv/bin/activate
+bash run.sh
+```
+
+### 6. Cron 등록 (매주 월요일 09:00 KST = 00:00 UTC)
+
+```bash
 crontab -e
-# 아래 한 줄 추가:
-# 0 0 * * 1 cd /path/to/research-wiki && source .venv/bin/activate && bash run.sh >> logs/cron.log 2>&1
+```
+
+아래 한 줄 추가 (`/path/to/research-wiki`를 실제 경로로 변경):
+
+```
+0 0 * * 1 cd /path/to/research-wiki && source .venv/bin/activate && bash run.sh >> logs/cron.log 2>&1
 ```
 
 ## 설정
