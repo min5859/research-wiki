@@ -1,0 +1,19 @@
+papers:
+  count: 2
+  lookback_days: 7
+
+sources:
+  huggingface:
+    enabled: true
+    weight: 0.7
+  semantic_scholar:
+    enabled: true
+    weight: 0.3
+    api_key: ""
+
+wiki:
+  repo: "min5859/research-wiki"
+
+analysis:
+  language: "ko"
+  prompt_file: "prompts/analyze.md"
