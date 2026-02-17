@@ -23,8 +23,8 @@ run.sh (cron 매주 월 09:00 KST)
 ## 설치
 
 ```bash
-git clone git@github.com:min5859/research-wiki-pipeline.git
-cd research-wiki-pipeline
+git clone git@github.com:min5859/research-wiki.git
+cd research-wiki
 pip install -r requirements.txt
 ```
 
