@@ -6,6 +6,14 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 LOG_DIR="$SCRIPT_DIR/logs"
 LOG_FILE="$LOG_DIR/cron.log"
 
+# Activate venv if present (for cron environment)
+if [ -f "$SCRIPT_DIR/.venv/bin/activate" ]; then
+    source "$SCRIPT_DIR/.venv/bin/activate"
+fi
+
+# Ensure Homebrew, nvm, and claude CLI are in PATH (cron doesn't load user profile)
+export PATH="/opt/homebrew/bin:$HOME/.local/bin:$HOME/.nvm/versions/node/$(ls "$HOME/.nvm/versions/node/" 2>/dev/null | tail -1)/bin:$PATH"
+
 mkdir -p "$LOG_DIR" "$SCRIPT_DIR/data/pdfs" "$SCRIPT_DIR/data/markdown" "$SCRIPT_DIR/data/analysis"
 
 log() {
