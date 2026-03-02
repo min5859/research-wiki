@@ -17,6 +17,9 @@ error() {
     echo "$(date '+%Y-%m-%d %H:%M:%S') [ERROR] $*" | tee -a "$LOG_FILE"
 }
 
+# Ensure claude CLI is in PATH (cron doesn't load user profile)
+export PATH="$HOME/.local/bin:$PATH"
+
 mkdir -p "$ANALYSIS_DIR"
 
 if [ ! -f "$PAPERS_FILE" ]; then

@@ -58,7 +58,9 @@ def build_weekly_page(papers: list[dict], date_str: str) -> str:
             analysis = analysis_path.read_text(encoding="utf-8").strip()
             lines.append(analysis)
         else:
-            lines.append(f"### Abstract\n\n{paper.get('abstract', 'N/A')}")
+            lines.append(f"### 초록 (원문)\n\n{paper.get('abstract', 'N/A')}")
+            lines.append("")
+            lines.append("> *분석 생성에 실패하여 원문 초록을 표시합니다.*")
 
         lines.append("")
         lines.append("---")
