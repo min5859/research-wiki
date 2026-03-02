@@ -6,8 +6,10 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 ROOT="$(dirname "$SCRIPT_DIR")"
 PAPERS_FILE="$ROOT/data/papers.json"
 ANALYSIS_DIR="$ROOT/data/analysis"
-PROMPT_FILE="$ROOT/prompts/analyze.md"
 LOG_FILE="$ROOT/logs/analyze.log"
+
+# Read prompt_file from config.yaml (fallback to default path)
+PROMPT_FILE="$ROOT/$(python3 -c "import yaml; print(yaml.safe_load(open('$ROOT/config.yaml'))['analysis'].get('prompt_file', 'prompts/analyze.md'))")"
 
 log() {
     echo "$(date '+%Y-%m-%d %H:%M:%S') [INFO] $*" | tee -a "$LOG_FILE"
@@ -15,6 +17,15 @@ log() {
 
 error() {
     echo "$(date '+%Y-%m-%d %H:%M:%S') [ERROR] $*" | tee -a "$LOG_FILE"
+}
+
+# OS-aware sed -i (macOS BSD sed requires '' argument, GNU sed does not)
+sed_inplace() {
+    if [[ "$(uname)" == "Darwin" ]]; then
+        sed -i '' "$@"
+    else
+        sed -i "$@"
+    fi
 }
 
 # Ensure claude CLI is in PATH (cron doesn't load user profile)
@@ -31,6 +42,8 @@ PROMPT_TEMPLATE=$(cat "$PROMPT_FILE")
 
 # Parse papers.json and process each paper
 PAPER_COUNT=$(python3 -c "import json; print(len(json.load(open('$PAPERS_FILE'))))")
+
+SUCCESS_COUNT=0
 
 for i in $(seq 0 $((PAPER_COUNT - 1))); do
     ARXIV_ID=$(python3 -c "import json; print(json.load(open('$PAPERS_FILE'))[$i]['arxiv_id'])")
@@ -77,10 +90,11 @@ $PAPER_CONTENT"
     if env -u CLAUDECODE claude -p "$FULL_PROMPT" --output-format text > "$OUTPUT_FILE" 2>>"$LOG_FILE"; then
         # Strip bkit footer if present
         if grep -q "^─.*bkit Feature Usage" "$OUTPUT_FILE" 2>/dev/null; then
-            sed -i '/^─.*bkit Feature Usage/,$d' "$OUTPUT_FILE"
+            sed_inplace '/^─.*bkit Feature Usage/,$d' "$OUTPUT_FILE"
             # Remove trailing blank lines
-            sed -i -e :a -e '/^\n*$/{$d;N;ba' -e '}' "$OUTPUT_FILE"
+            sed_inplace -e :a -e '/^\n*$/{$d;N;ba' -e '}' "$OUTPUT_FILE"
         fi
+        SUCCESS_COUNT=$((SUCCESS_COUNT + 1))
         log "Analysis saved: $OUTPUT_FILE ($(wc -c < "$OUTPUT_FILE") bytes)"
     else
         error "Claude analysis failed for $ARXIV_ID"
@@ -91,4 +105,9 @@ $PAPER_CONTENT"
     sleep 2
 done
 
-log "Analysis complete"
+if [ "$SUCCESS_COUNT" -eq 0 ]; then
+    error "No papers were successfully analyzed"
+    exit 1
+fi
+
+log "Analysis complete ($SUCCESS_COUNT/$PAPER_COUNT papers)"

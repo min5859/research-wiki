@@ -10,6 +10,7 @@ sources:
     enabled: true
     weight: 0.3
     api_key: ""
+    query: "artificial intelligence"
 
 wiki:
   repo: "min5859/research-wiki"

@@ -3,6 +3,7 @@
 
 import json
 import logging
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -129,11 +130,17 @@ def main():
     wiki_dir = ROOT / "data" / "wiki_clone"
     if wiki_dir.exists():
         log.info("Pulling existing wiki clone")
-        subprocess.run(
-            ["git", "-C", str(wiki_dir), "pull", "--rebase"],
-            check=True, capture_output=True, text=True,
-        )
-    else:
+        try:
+            subprocess.run(
+                ["git", "-C", str(wiki_dir), "pull", "--rebase"],
+                check=True, capture_output=True, text=True,
+            )
+        except subprocess.CalledProcessError:
+            log.warning("Pull failed, removing stale clone and re-cloning")
+            shutil.rmtree(wiki_dir)
+            # Fall through to clone below
+
+    if not wiki_dir.exists():
         log.info("Cloning wiki repo: %s", wiki_url)
         try:
             subprocess.run(

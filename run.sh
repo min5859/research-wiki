@@ -48,13 +48,19 @@ else
     exit 1
 fi
 
-# Step 4: Analyze with Claude Code
+# Step 4: Analyze with Claude Code (partial failure allowed — analyze.sh exits 1 only if zero papers succeed)
 log "Step 4/5: Analyzing papers with Claude Code..."
 if bash "$SCRIPT_DIR/src/analyze.sh" 2>>"$LOG_FILE"; then
     log "Step 4 complete"
 else
-    error "Step 4 failed: analyze.sh"
-    exit 1
+    # Check if at least one analysis file exists
+    ANALYSIS_COUNT=$(find "$SCRIPT_DIR/data/analysis" -name "*_analysis.md" -size +0 2>/dev/null | wc -l | tr -d ' ')
+    if [ "$ANALYSIS_COUNT" -gt 0 ]; then
+        log "Step 4 partially failed, but $ANALYSIS_COUNT analysis file(s) available — continuing"
+    else
+        error "Step 4 failed: no analysis files produced"
+        exit 1
+    fi
 fi
 
 # Step 5: Publish to GitHub Wiki

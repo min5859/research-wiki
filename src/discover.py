@@ -80,7 +80,7 @@ def fetch_semantic_scholar(lookback_days: int) -> list[dict]:
     date_range = f"{start}:{today}"
 
     params = {
-        "query": "artificial intelligence",
+        "query": CONFIG["sources"]["semantic_scholar"].get("query", "artificial intelligence"),
         "fields": "title,abstract,citationCount,openAccessPdf,publicationDate,externalIds",
         "sort": "citationCount:desc",
         "publicationDateOrYear": date_range,
