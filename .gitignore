@@ -4,5 +4,6 @@ __pycache__/
 *.pyc
 .env
 .venv/
+.bkit/
 docs/.bkit-memory.json
 docs/.pdca-status.json
