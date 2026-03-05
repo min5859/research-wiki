@@ -5,7 +5,7 @@
 ## 동작 흐름
 
 ```
-run.sh (cron 매주 월 09:00 KST)
+run.sh (macOS launchd 매일 08:00)
   │
   ├─ 1. discover.py   → HF Daily Papers + Semantic Scholar에서 상위 2편 선정
   ├─ 2. download.py   → arXiv PDF 다운로드
@@ -68,16 +68,65 @@ source .venv/bin/activate
 bash run.sh
 ```
 
-### 6. Cron 등록 (매주 월요일 09:00 KST = 00:00 UTC)
+### 6. 자동 실행 등록 (macOS launchd)
+
+macOS에서는 cron 대신 **launchd**를 사용합니다. launchd는 사용자 세션에서 실행되어 Claude CLI의 OAuth 인증이 안정적으로 동작합니다.
 
 ```bash
-crontab -e
+# 심볼릭 링크 생성
+ln -s /path/to/research-wiki/config/com.wooki.research-wiki.plist ~/Library/LaunchAgents/
+
+# 에이전트 등록
+launchctl load ~/Library/LaunchAgents/com.wooki.research-wiki.plist
 ```
 
-아래 한 줄 추가 (`/path/to/research-wiki`를 실제 경로로 변경):
+주요 launchctl 명령어:
 
+```bash
+# 상태 확인
+launchctl list | grep research-wiki
+
+# 즉시 실행 (테스트용)
+launchctl start com.wooki.research-wiki
+
+# 중지 (등록 해제)
+launchctl unload ~/Library/LaunchAgents/com.wooki.research-wiki.plist
+
+# plist 수정 후 재등록
+launchctl unload ~/Library/LaunchAgents/com.wooki.research-wiki.plist
+launchctl load ~/Library/LaunchAgents/com.wooki.research-wiki.plist
 ```
-0 0 * * 1 cd /path/to/research-wiki && source .venv/bin/activate && bash run.sh >> logs/cron.log 2>&1
+
+> **참고**: plist 파일은 `config/com.wooki.research-wiki.plist`에 있으며 매일 08:00에 실행됩니다. 스케줄 변경은 plist의 `StartCalendarInterval`을 수정 후 재등록하세요.
+
+#### launchd vs systemd 비교 (Linux 사용자 참고)
+
+| systemd (Linux) | launchd (macOS) | 설명 |
+|---|---|---|
+| `systemctl enable` | `launchctl load` | 등록 (재부팅 후에도 유지) |
+| `systemctl disable` | `launchctl unload` | 등록 해제 |
+| `systemctl start` | `launchctl start` | 수동 1회 실행 |
+
+- `load` 상태에서는 매일 08:00에 **자동 실행**되고, 재부팅 후 로그인 시에도 스케줄이 유지됩니다.
+- 자동 실행 없이 **수동으로만** 실행하려면 `unload`로 해제 후 필요할 때 `bash run.sh`를 직접 실행하세요.
+- launchd는 `load` 없이 `start`만 하는 것은 지원되지 않습니다. 반드시 `load` → `start` 순서로 실행해야 합니다.
+
+### 7. 로그 확인
+
+```bash
+# 파이프라인 전체 로그 (실시간 모니터링)
+tail -f logs/cron.log
+
+# 최근 로그 확인
+tail -50 logs/cron.log
+
+# 각 단계별 상세 로그
+tail -50 logs/discover.log   # 논문 검색
+tail -50 logs/analyze.log    # Claude 분석 (인증 실패, 재시도 등)
+tail -50 logs/publish.log    # Wiki 발행
+
+# launchd 시스템 로그 (plist 로드 실패 등)
+log show --predicate 'senderImagePath contains "launchd"' --info --last 1h | grep research-wiki
 ```
 
 ## 설정
@@ -107,6 +156,8 @@ sources:
 │   └── publish.py       # GitHub Wiki 발행
 ├── prompts/
 │   └── analyze.md       # 분석 프롬프트 템플릿
+├── config/
+│   └── com.wooki.research-wiki.plist  # macOS launchd 스케줄 설정
 ├── config.yaml          # 설정
 ├── requirements.txt     # Python 의존성
 ├── run.sh               # 파이프라인 오케스트레이터

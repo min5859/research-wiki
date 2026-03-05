@@ -18,3 +18,5 @@ wiki:
 analysis:
   language: "ko"
   prompt_file: "prompts/analyze.md"
+  anthropic_api_key: ""  # Set this for reliable cron/oneshot authentication
+  max_retries: 2         # Retry count when analysis output is not in Korean
