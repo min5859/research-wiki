@@ -72,6 +72,8 @@ bash run.sh
 
 macOS에서는 cron 대신 **launchd**를 사용합니다. launchd는 사용자 세션에서 실행되어 Claude CLI의 OAuth 인증이 안정적으로 동작합니다.
 
+> **동작 방식**: 이 프로젝트의 plist는 `StartCalendarInterval`을 사용하는 **스케줄 일회성 실행** 방식입니다. 매일 08:00에 파이프라인을 실행한 뒤 프로세스가 종료됩니다 (crontab과 동일한 방식). 상주 데몬이 아니므로 `RunAtLoad`나 `KeepAlive` 설정이 없으며, 재부팅 후에도 즉시 실행되지 않고 다음 08:00에 실행됩니다. 수동으로 즉시 실행하려면 `launchctl start com.wooki.research-wiki`를 사용하세요.
+
 ```bash
 # 심볼릭 링크 생성
 ln -s /path/to/research-wiki/config/com.wooki.research-wiki.plist ~/Library/LaunchAgents/
