@@ -11,6 +11,7 @@ LOG_FILE="$ROOT/logs/analyze.log"
 # Read config values from config.yaml
 PROMPT_FILE="$ROOT/$(python3 -c "import yaml; print(yaml.safe_load(open('$ROOT/config.yaml'))['analysis'].get('prompt_file', 'prompts/analyze.md'))")"
 MAX_RETRIES=$(python3 -c "import yaml; print(yaml.safe_load(open('$ROOT/config.yaml'))['analysis'].get('max_retries', 2))")
+MODEL=$(python3 -c "import yaml; print(yaml.safe_load(open('$ROOT/config.yaml'))['analysis'].get('model', 'sonnet'))")
 ANTHROPIC_API_KEY_CFG=$(python3 -c "import yaml; print(yaml.safe_load(open('$ROOT/config.yaml'))['analysis'].get('anthropic_api_key', ''))")
 
 log() {
@@ -75,8 +76,8 @@ if ! command -v claude &>/dev/null; then
     exit 1
 fi
 
-log "Checking claude CLI authentication..."
-if env -u CLAUDECODE claude -p "Reply with only: OK" --output-format text &>/dev/null; then
+log "Checking claude CLI authentication (model: $MODEL)..."
+if env -u CLAUDECODE claude -p "Reply with only: OK" --model "$MODEL" --output-format text &>/dev/null; then
     log "claude CLI authentication verified"
 else
     error "claude CLI authentication failed. Set ANTHROPIC_API_KEY in config.yaml or run 'claude login' interactively."
@@ -145,7 +146,7 @@ $PAPER_CONTENT"
         fi
 
         # Run Claude Code CLI (unset CLAUDECODE to prevent nested session conflict)
-        if env -u CLAUDECODE claude -p "$FULL_PROMPT" --output-format text > "$OUTPUT_FILE" 2>>"$LOG_FILE"; then
+        if env -u CLAUDECODE claude -p "$FULL_PROMPT" --model "$MODEL" --output-format text > "$OUTPUT_FILE" 2>>"$LOG_FILE"; then
             strip_bkit_footer "$OUTPUT_FILE"
 
             # Validate: output must contain Korean text
