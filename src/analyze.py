@@ -74,14 +74,21 @@ def run_claude(prompt: str, model: str) -> str | None:
 
 
 def run_codex(prompt: str, model: str) -> str | None:
-    r = subprocess.run(
-        ["codex", "exec", "-", "-m", model, "--full-auto"],
-        input=prompt, capture_output=True, text=True,
-    )
-    if r.returncode != 0:
-        log.error("codex error: %s", r.stderr.strip()[:200])
-        return None
-    return r.stdout
+    import tempfile
+    tmp = tempfile.NamedTemporaryFile(suffix=".md", delete=False)
+    tmp.close()
+    try:
+        cmd = ["codex", "exec", "-", "-o", tmp.name, "--ephemeral"]
+        if model:
+            cmd += ["-m", model]
+        r = subprocess.run(cmd, input=prompt, capture_output=True, text=True)
+        if r.returncode != 0:
+            log.error("codex error: %s", r.stderr.strip()[:200])
+            return None
+        output = Path(tmp.name).read_text()
+        return output if output.strip() else None
+    finally:
+        Path(tmp.name).unlink(missing_ok=True)
 
 
 def run_cursor(prompt: str, model: str) -> str | None:

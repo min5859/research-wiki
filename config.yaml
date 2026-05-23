@@ -18,7 +18,7 @@ wiki:
 analysis:
   language: "ko"
   prompt_file: "prompts/analyze.md"
-  provider: "cursor"       # "claude" | "codex" | "cursor"
+  provider: "codex"         # "claude" | "codex" | "cursor"
   max_retries: 2           # Retry count when analysis output is not in Korean
 
   claude:
@@ -26,7 +26,7 @@ analysis:
     api_key: ""            # ANTHROPIC_API_KEY override for cron/oneshot
 
   codex:
-    model: "o3"            # OpenAI model for codex CLI
+    model: ""              # codex CLI model (빈 값이면 기본 모델 사용)
 
   cursor:
     model: "sonnet-4"      # Model for cursor CLI
