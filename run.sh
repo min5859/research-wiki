@@ -56,9 +56,9 @@ else
     exit 1
 fi
 
-# Step 4: Analyze with Claude Code (partial failure allowed — analyze.sh exits 1 only if zero papers succeed)
-log "Step 4/5: Analyzing papers with Claude Code..."
-if bash "$SCRIPT_DIR/src/analyze.sh" 2>>"$LOG_FILE"; then
+# Step 4: Analyze with AI CLI (partial failure allowed — exits 1 only if zero papers succeed)
+log "Step 4/5: Analyzing papers with AI CLI..."
+if python3 "$SCRIPT_DIR/src/analyze.py" 2>>"$LOG_FILE"; then
     log "Step 4 complete"
 else
     # Check if at least one analysis file exists

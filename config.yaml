@@ -18,6 +18,16 @@ wiki:
 analysis:
   language: "ko"
   prompt_file: "prompts/analyze.md"
-  model: "sonnet"        # claude CLI model: "sonnet", "opus", "haiku" or full model ID
-  anthropic_api_key: ""  # Set this for reliable cron/oneshot authentication
-  max_retries: 2         # Retry count when analysis output is not in Korean
+  provider: "claude"       # "claude" | "codex" | "cursor"
+  max_retries: 2           # Retry count when analysis output is not in Korean
+
+  claude:
+    model: "sonnet"        # "sonnet", "opus", "haiku" or full model ID
+    api_key: ""            # ANTHROPIC_API_KEY override for cron/oneshot
+
+  codex:
+    model: "o3"            # OpenAI model for codex CLI
+
+  cursor:
+    model: "sonnet-4"      # Model for cursor CLI
+    api_key: ""

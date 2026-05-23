@@ -19,7 +19,7 @@ bash run.sh
 python3 src/discover.py    # 논문 검색 → data/papers.json
 python3 src/download.py    # PDF 다운로드 → data/pdfs/
 python3 src/convert.py     # PDF→Markdown → data/markdown/
-bash src/analyze.sh        # Claude 분석 → data/analysis/
+python3 src/analyze.py     # AI CLI 분석 → data/analysis/ (provider: claude/codex/cursor)
 python3 src/publish.py     # Wiki 발행
 
 # 의존성 설치
@@ -43,9 +43,10 @@ discover → papers.json → download → pdfs/ → convert → markdown/ → an
 - **스코어링**: `(upvotes/max) * 0.7 + (citations/max) * 0.3`으로 HF와 S2 합산
 - **Fallback**: PDF 다운로드 실패 시 S2 openAccessPdf → 변환 실패 시 abstract로 대체
 - **멱등성**: 각 단계에서 출력 파일이 이미 존재하면 스킵
-- **분석 호출**: `env -u CLAUDECODE claude -p` — 중첩 세션 방지를 위해 CLAUDECODE 환경변수 해제 필요
-- **bkit footer 제거**: analyze.sh에서 Claude 출력의 bkit 보고 블록을 sed로 자동 제거
-- **Paper 최대 길이**: 80,000자 초과 시 truncate (Claude 컨텍스트 제한)
+- **멀티 프로바이더**: config.yaml의 `provider` 필드로 claude/codex/cursor CLI 전환 가능
+- **분석 호출**: Claude 사용 시 CLAUDECODE 환경변수 해제로 중첩 세션 방지
+- **bkit footer 제거**: Claude 출력의 bkit 보고 블록 자동 제거 (Claude provider 전용)
+- **Paper 최대 길이**: 80,000자 초과 시 truncate (컨텍스트 제한)
 
 ## Conventions
 
