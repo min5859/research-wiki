@@ -18,7 +18,7 @@ wiki:
 analysis:
   language: "ko"
   prompt_file: "prompts/analyze.md"
-  provider: "claude"       # "claude" | "codex" | "cursor"
+  provider: "cursor"       # "claude" | "codex" | "cursor"
   max_retries: 2           # Retry count when analysis output is not in Korean
 
   claude:

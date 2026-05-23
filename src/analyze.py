@@ -91,8 +91,8 @@ def run_cursor(prompt: str, model: str) -> str | None:
     if api_key:
         env["CURSOR_API_KEY"] = api_key
     r = subprocess.run(
-        ["cursor", "agent", "-p", prompt, "--model", model, "--output-format", "text"],
-        input=prompt, capture_output=True, text=True, env=env,
+        ["agent", "-p", "--model", model, "--output-format", "text", "--trust", prompt],
+        capture_output=True, text=True, env=env,
     )
     if r.returncode != 0:
         log.error("cursor error: %s", r.stderr.strip()[:200])
@@ -104,7 +104,7 @@ PROVIDERS = {"claude": run_claude, "codex": run_codex, "cursor": run_cursor}
 
 
 def check_provider(name: str) -> None:
-    cmd = name if name != "cursor" else "cursor"
+    cmd = "agent" if name == "cursor" else name
     if not shutil.which(cmd):
         log.error("%s CLI not found in PATH", cmd)
         sys.exit(1)
