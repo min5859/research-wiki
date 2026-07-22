@@ -31,7 +31,7 @@ log "========================================="
 
 # Step 1: Discover trending papers
 log "Step 1/5: Discovering trending papers..."
-if python3 "$SCRIPT_DIR/src/discover.py" 2>>"$LOG_FILE"; then
+if "$SCRIPT_DIR/.venv/bin/python" "$SCRIPT_DIR/src/discover.py" 2>>"$LOG_FILE"; then
     log "Step 1 complete"
 else
     error "Step 1 failed: discover.py"
@@ -40,7 +40,7 @@ fi
 
 # Step 2: Download PDFs
 log "Step 2/5: Downloading PDFs..."
-if python3 "$SCRIPT_DIR/src/download.py" 2>>"$LOG_FILE"; then
+if "$SCRIPT_DIR/.venv/bin/python" "$SCRIPT_DIR/src/download.py" 2>>"$LOG_FILE"; then
     log "Step 2 complete"
 else
     error "Step 2 failed: download.py"
@@ -49,7 +49,7 @@ fi
 
 # Step 3: Convert PDF to Markdown
 log "Step 3/5: Converting PDFs to Markdown..."
-if python3 "$SCRIPT_DIR/src/convert.py" 2>>"$LOG_FILE"; then
+if "$SCRIPT_DIR/.venv/bin/python" "$SCRIPT_DIR/src/convert.py" 2>>"$LOG_FILE"; then
     log "Step 3 complete"
 else
     error "Step 3 failed: convert.py"
@@ -58,22 +58,25 @@ fi
 
 # Step 4: Analyze with AI CLI (partial failure allowed — exits 1 only if zero papers succeed)
 log "Step 4/5: Analyzing papers with AI CLI..."
-if python3 "$SCRIPT_DIR/src/analyze.py" 2>>"$LOG_FILE"; then
+STEP4_MARKER="$LOG_DIR/.step4-start"
+: > "$STEP4_MARKER"
+if "$SCRIPT_DIR/.venv/bin/python" "$SCRIPT_DIR/src/analyze.py" 2>>"$LOG_FILE"; then
     log "Step 4 complete"
 else
-    # Check if at least one analysis file exists
-    ANALYSIS_COUNT=$(find "$SCRIPT_DIR/data/analysis" -name "*_analysis.md" -size +0 2>/dev/null | wc -l | tr -d ' ')
+    # Count only analysis files (re)generated during THIS run, not stale accumulated ones
+    ANALYSIS_COUNT=$(find "$SCRIPT_DIR/data/analysis" -name "*_analysis.md" -size +0 -newer "$STEP4_MARKER" 2>/dev/null | wc -l | tr -d ' ')
     if [ "$ANALYSIS_COUNT" -gt 0 ]; then
-        log "Step 4 partially failed, but $ANALYSIS_COUNT analysis file(s) available — continuing"
+        log "Step 4 partially failed, but $ANALYSIS_COUNT fresh analysis file(s) from this run — continuing"
     else
-        error "Step 4 failed: no analysis files produced"
+        error "Step 4 failed: no fresh analysis files produced this run"
         exit 1
     fi
 fi
+rm -f "$STEP4_MARKER"
 
 # Step 5: Publish to GitHub Wiki
 log "Step 5/5: Publishing to GitHub Wiki..."
-if python3 "$SCRIPT_DIR/src/publish.py" 2>>"$LOG_FILE"; then
+if "$SCRIPT_DIR/.venv/bin/python" "$SCRIPT_DIR/src/publish.py" 2>>"$LOG_FILE"; then
     log "Step 5 complete"
 else
     error "Step 5 failed: publish.py"
