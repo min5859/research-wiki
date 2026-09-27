@@ -187,3 +187,47 @@ fatal: could not create work tree dir '/srv/research-wiki': Permission denied
 - `scripts/check_wiki_access.py` 성공
 - 임시 clone의 `git push --dry-run`만 수행했으며 원격 Wiki 변경 없음
 - `research-wiki.timer`는 계속 `disabled`, `inactive`
+
+### 2026-09-28 정기 실행 확인과 컷오버
+
+05:00 KST의 OSS Radar 첫 정기 실행은 새 `wiki-publisher` 계정으로 성공했습니다.
+
+- service result/exit status: success/0
+- Wiki commit `a2d0ab5` 생성
+- history 610개에서 615개로 증가
+
+04:00 KST의 로컬 Research Wiki는 수집, 변환, 분석까지 성공했지만 게시 호출 직전에
+실패했습니다.
+
+```text
+run.sh: line 100: PUBLISH_ARGS[@]: unbound variable
+```
+
+원인은 macOS 기본 Bash 3.2가 `set -u` 상태에서 빈 배열을 확장할 때 오류를 내는
+것입니다. OCI의 최신 Bash에서는 같은 dry-run이 성공해 사전 검증에서 드러나지
+않았습니다.
+
+- 빈 배열을 사용하지 않는 `run_publish` 함수로 수정
+- 일반 게시와 dry-run 경로를 실행하는 회귀 테스트 2개 추가
+- 전체 단위 테스트 12개 통과
+- fix commit `d4ee3b3`
+
+분석 결과와 Wiki clone은 정상이라 전체 파이프라인을 반복하지 않고 `publish.py`만
+실행해 당일 게시를 복구했습니다.
+
+- Wiki commit `4ac8527` `Weekly AI Paper Review - 2026-09-28`
+- history 362개에서 364개로 증가
+- 실제 Wiki 게시 364개와 history 양방향 차이 0
+
+컷오버:
+
+- OCI 코드 update, 테스트 12개, Wiki push dry-run 재검증
+- Mac `com.wooki.research-wiki` LaunchAgent bootout/disable
+- 롤백용 plist symlink 보존, 활성 cron 항목 없음 확인
+- 최신 history 364개를 SHA-256 일치 확인 후 OCI로 전송
+- 서버 기존 history 362개를
+  `data/history.json.pre-cutover-20260928`로 백업
+- `research-wiki.timer`를 enabled/active로 전환
+- 다음 실행: 2026-09-29 04:00 KST
+
+다음 2회 정기 실행과 Wiki 게시를 확인하면 이관 완료로 판정합니다.
