@@ -3,12 +3,15 @@
 
 import json
 import logging
+import os
 import sys
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 import requests
 import yaml
+
+from history import load_history
 
 logging.basicConfig(
     level=logging.INFO,
@@ -24,16 +27,6 @@ ROOT = Path(__file__).resolve().parent.parent
 CONFIG = yaml.safe_load((ROOT / "config.yaml").read_text())
 HISTORY_FILE = ROOT / "data" / "history.json"
 OUTPUT_FILE = ROOT / "data" / "papers.json"
-
-
-def load_history() -> set[str]:
-    if HISTORY_FILE.exists():
-        return set(json.loads(HISTORY_FILE.read_text()))
-    return set()
-
-
-def save_history(history: set[str]):
-    HISTORY_FILE.write_text(json.dumps(sorted(history), indent=2))
 
 
 def fetch_huggingface(lookback_days: int) -> list[dict]:
@@ -87,7 +80,9 @@ def fetch_semantic_scholar(lookback_days: int) -> list[dict]:
         "limit": 20,
     }
     headers = {}
-    api_key = CONFIG["sources"]["semantic_scholar"].get("api_key", "")
+    api_key = os.environ.get("SEMANTIC_SCHOLAR_API_KEY") or CONFIG["sources"][
+        "semantic_scholar"
+    ].get("api_key", "")
     if api_key:
         headers["x-api-key"] = api_key
 
@@ -178,7 +173,7 @@ def score_and_select(hf_papers: list[dict], s2_papers: list[dict], count: int, h
 def main():
     count = CONFIG["papers"]["count"]
     lookback = CONFIG["papers"]["lookback_days"]
-    history = load_history()
+    history = load_history(HISTORY_FILE)
 
     log.info("Fetching papers (lookback=%d days, count=%d)", lookback, count)
 
@@ -208,10 +203,7 @@ def main():
     OUTPUT_FILE.write_text(json.dumps(selected, indent=2, ensure_ascii=False))
     log.info("Saved to %s", OUTPUT_FILE)
 
-    # Update history
-    for p in selected:
-        history.add(p["arxiv_id"])
-    save_history(history)
+    # publish.py updates history only after the Wiki push succeeds.
 
 
 if __name__ == "__main__":

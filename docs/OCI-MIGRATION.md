@@ -70,7 +70,7 @@ PDF를 보존해야 합니다.
 ### 4.4 게시 안전장치
 
 - `publish.py --dry-run`
-- `OSS_RESEARCH_WIKI_DRY_RUN=1` 전체 dry-run
+- `RESEARCH_WIKI_DRY_RUN=1` 전체 dry-run
 - `GITHUB_WIKI_TOKEN`을 Git subprocess의 일시적 HTTP header로만 전달
 - `RESEARCH_WIKI_URL`로 credential 없는 HTTPS remote 지정
 - pull/clone 실패 시 기존 작업물을 보존하고 즉시 실패
@@ -136,4 +136,19 @@ worktree, Wiki clone, history와 미푸시 commit을 검사하며 자동으로 �
 
 ## 9. 실행 기록
 
-실제 변경, 검증 결과, 일시적 실패와 복구 과정을 이 절에 시간순으로 추가합니다.
+### 2026-09-27 로컬 코드 준비
+
+- 기존 PDF 삭제 변경에 회귀 테스트 3개 추가 후 별도 commit
+- 분석 provider를 Cursor `claude-sonnet-5-medium`으로 전환
+- Cursor 로그인 사전 검사와 ask mode 호출, CLI 오류 tail 기록 추가
+- history 갱신을 Wiki push 성공 이후로 이동하고 원자적 저장 적용
+- Wiki 인증, clone 보존, push 확인, dry-run 안전장치 추가
+- 게시 날짜를 `Asia/Seoul`로 고정해 OCI UTC 서버의 전날 날짜 문제 방지
+- history 원본을 `history.json.backup-20260927-212940`으로 백업
+- history 390개를 실제 게시 362개로 정리; 양방향 차이 0 확인
+- 단위 테스트 10개, compileall, `bash -n`, 게시 단독 dry-run 통과
+- Cursor 기반 전체 dry-run 성공: 후보/다운로드/변환/분석 각 2개
+- 전체 dry-run 중 history 362개와 원격 Wiki commit 불변 확인
+
+다음 단계는 코드 commit/push 후 OCI 비활성 설치와 서버 dry-run입니다. 실제 writer
+컷오버는 OSS Radar의 2026-09-28 05:00 KST 정기 실행 확인 뒤에만 진행합니다.

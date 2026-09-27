@@ -8,12 +8,12 @@ OCI 이관 계획과 진행 기록은 [`docs/OCI-MIGRATION.md`](docs/OCI-MIGRATI
 ## 동작 흐름
 
 ```
-run.sh (macOS launchd 매일 08:00)
+run.sh (macOS launchd 매일 04:00 KST)
   │
   ├─ 1. discover.py   → HF Daily Papers + Semantic Scholar에서 상위 2편 선정
   ├─ 2. download.py   → arXiv PDF 다운로드
   ├─ 3. convert.py    → PDF → Markdown 변환 (pymupdf4llm)
-  ├─ 4. analyze.sh    → Claude Code CLI로 한국어 분석 리포트 생성
+  ├─ 4. analyze.py    → Cursor Agent로 한국어 분석 리포트 생성
   └─ 5. publish.py    → GitHub Wiki에 자동 발행
 ```
 
@@ -25,12 +25,9 @@ run.sh (macOS launchd 매일 08:00)
 # Python 3.10+ 확인
 python3 --version
 
-# Node.js (Claude Code CLI 설치에 필요)
-node --version
-
-# Claude Code CLI 설치 및 인증
-npm install -g @anthropic-ai/claude-code
-claude  # 최초 실행 시 인증 진행
+# Cursor Agent CLI 설치 및 인증
+curl -fsSL https://cursor.com/install | bash
+agent login
 ```
 
 ### 2. SSH Key 설정 (GitHub push용)
@@ -71,11 +68,25 @@ source .venv/bin/activate
 bash run.sh
 ```
 
+실제 Wiki 게시 없이 전체 흐름을 검증하려면:
+
+```bash
+RESEARCH_WIKI_DRY_RUN=1 bash run.sh
+```
+
+발행 이력과 Wiki 페이지 차이는 다음 명령으로 점검·복구합니다. `--apply`는 기존
+history를 타임스탬프 백업한 뒤 실제 게시된 논문 ID로 정리합니다.
+
+```bash
+python3 scripts/reconcile_history.py
+python3 scripts/reconcile_history.py --apply
+```
+
 ### 6. 자동 실행 등록 (macOS launchd)
 
 macOS에서는 cron 대신 **launchd**를 사용합니다. launchd는 사용자 세션에서 실행되어 Claude CLI의 OAuth 인증이 안정적으로 동작합니다.
 
-> **동작 방식**: 이 프로젝트의 plist는 `StartCalendarInterval`을 사용하는 **스케줄 일회성 실행** 방식입니다. 매일 08:00에 파이프라인을 실행한 뒤 프로세스가 종료됩니다 (crontab과 동일한 방식). 상주 데몬이 아니므로 `RunAtLoad`나 `KeepAlive` 설정이 없으며, 재부팅 후에도 즉시 실행되지 않고 다음 08:00에 실행됩니다. 수동으로 즉시 실행하려면 `launchctl start com.wooki.research-wiki`를 사용하세요.
+> **동작 방식**: 이 프로젝트의 plist는 `StartCalendarInterval`을 사용하는 **스케줄 일회성 실행** 방식입니다. 매일 04:00에 파이프라인을 실행한 뒤 프로세스가 종료됩니다 (crontab과 동일한 방식). 상주 데몬이 아니므로 `RunAtLoad`나 `KeepAlive` 설정이 없으며, 재부팅 후에도 즉시 실행되지 않고 다음 04:00에 실행됩니다. 수동으로 즉시 실행하려면 `launchctl start com.wooki.research-wiki`를 사용하세요.
 
 ```bash
 # 심볼릭 링크 생성
@@ -102,7 +113,7 @@ launchctl unload ~/Library/LaunchAgents/com.wooki.research-wiki.plist
 launchctl load ~/Library/LaunchAgents/com.wooki.research-wiki.plist
 ```
 
-> **참고**: plist 파일은 `config/com.wooki.research-wiki.plist`에 있으며 매일 08:00에 실행됩니다. 스케줄 변경은 plist의 `StartCalendarInterval`을 수정 후 재등록하세요.
+> **참고**: plist 파일은 `config/com.wooki.research-wiki.plist`에 있으며 매일 04:00에 실행됩니다. 스케줄 변경은 plist의 `StartCalendarInterval`을 수정 후 재등록하세요.
 
 #### launchd vs systemd 비교 (Linux 사용자 참고)
 
@@ -112,7 +123,7 @@ launchctl load ~/Library/LaunchAgents/com.wooki.research-wiki.plist
 | `systemctl disable` | `launchctl unload` | 등록 해제 |
 | `systemctl start` | `launchctl start` | 수동 1회 실행 |
 
-- `load` 상태에서는 매일 08:00에 **자동 실행**되고, 재부팅 후 로그인 시에도 스케줄이 유지됩니다.
+- `load` 상태에서는 매일 04:00에 **자동 실행**되고, 재부팅 후 로그인 시에도 스케줄이 유지됩니다.
 - 자동 실행 없이 **수동으로만** 실행하려면 `unload`로 해제 후 필요할 때 `bash run.sh`를 직접 실행하세요.
 - launchd는 `load` 없이 `start`만 하는 것은 지원되지 않습니다. 반드시 `load` → `start` 순서로 실행해야 합니다.
 
@@ -157,7 +168,7 @@ sources:
 │   ├── discover.py      # 트렌딩 논문 검색 및 스코어링
 │   ├── download.py      # PDF 다운로드 (arXiv + S2 fallback)
 │   ├── convert.py       # PDF → Markdown 변환
-│   ├── analyze.sh       # Claude Code CLI 분석
+│   ├── analyze.py       # Claude/Codex/Cursor CLI 분석
 │   └── publish.py       # GitHub Wiki 발행
 ├── prompts/
 │   └── analyze.md       # 분석 프롬프트 템플릿

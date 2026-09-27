@@ -53,6 +53,13 @@ def strip_bkit_footer(text: str) -> str:
     return text
 
 
+def cli_error_detail(stderr: str, limit: int = 4000) -> str:
+    detail = stderr.strip()
+    if len(detail) <= limit:
+        return detail
+    return f"... (truncated {len(detail) - limit} chars)\n{detail[-limit:]}"
+
+
 # ---------------------------------------------------------------------------
 # Provider functions: (prompt, model) -> output text | None
 # ---------------------------------------------------------------------------
@@ -68,7 +75,7 @@ def run_claude(prompt: str, model: str) -> str | None:
         capture_output=True, text=True, env=env,
     )
     if r.returncode != 0:
-        log.error("claude error: %s", r.stderr.strip()[:200])
+        log.error("claude error (exit=%d): %s", r.returncode, cli_error_detail(r.stderr))
         return None
     return strip_bkit_footer(r.stdout)
 
@@ -83,7 +90,7 @@ def run_codex(prompt: str, model: str) -> str | None:
             cmd += ["-m", model]
         r = subprocess.run(cmd, input=prompt, capture_output=True, text=True)
         if r.returncode != 0:
-            log.error("codex error: %s", r.stderr.strip()[:200])
+            log.error("codex error (exit=%d): %s", r.returncode, cli_error_detail(r.stderr))
             return None
         output = Path(tmp.name).read_text()
         return output if output.strip() else None
@@ -97,12 +104,13 @@ def run_cursor(prompt: str, model: str) -> str | None:
     api_key = cfg.get("api_key", "")
     if api_key:
         env["CURSOR_API_KEY"] = api_key
-    r = subprocess.run(
-        ["agent", "-p", "--model", model, "--output-format", "text", "--trust", prompt],
-        capture_output=True, text=True, env=env,
-    )
+    cmd = ["agent", "-p", "--mode", "ask", "--output-format", "text", "--trust"]
+    if model:
+        cmd += ["--model", model]
+    cmd.append(prompt)
+    r = subprocess.run(cmd, capture_output=True, text=True, env=env)
     if r.returncode != 0:
-        log.error("cursor error: %s", r.stderr.strip()[:200])
+        log.error("cursor error (exit=%d): %s", r.returncode, cli_error_detail(r.stderr))
         return None
     return r.stdout
 
@@ -131,6 +139,23 @@ def check_provider(name: str) -> None:
             log.error("claude CLI auth failed. Set api_key in config.yaml or run 'claude login'.")
             sys.exit(1)
         log.info("claude CLI authentication verified")
+    elif name == "cursor":
+        cfg = ANALYSIS_CFG.get("cursor", {})
+        model = cfg.get("model", "")
+        env = dict(os.environ)
+        api_key = cfg.get("api_key", "")
+        if api_key:
+            env["CURSOR_API_KEY"] = api_key
+        log.info("Checking cursor CLI authentication (model: %s)...", model or "default")
+        r = subprocess.run(["agent", "status"], capture_output=True, text=True, env=env)
+        status_text = f"{r.stdout}\n{r.stderr}".strip()
+        if r.returncode != 0 or "not logged in" in status_text.lower():
+            log.error(
+                "cursor CLI auth failed. Set CURSOR_API_KEY or run 'agent login'. %s",
+                cli_error_detail(status_text),
+            )
+            sys.exit(1)
+        log.info("cursor CLI authentication verified")
     else:
         log.info("%s CLI found: %s", name, shutil.which(cmd))
 
@@ -142,7 +167,7 @@ def main() -> None:
         sys.exit(1)
 
     provider_cfg = ANALYSIS_CFG.get(provider_name, {})
-    model = provider_cfg.get("model", "sonnet")
+    model = provider_cfg.get("model", "")
     max_retries = ANALYSIS_CFG.get("max_retries", 2)
     run_fn = PROVIDERS[provider_name]
 

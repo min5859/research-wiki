@@ -7,7 +7,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 매주 트렌딩 AI 논문 2편을 자동 수집·분석하여 GitHub Wiki에 한국어 리포트로 발행하는 파이프라인.
 
 - Wiki: https://github.com/min5859/research-wiki/wiki
-- Cron: 매주 월요일 00:00 UTC (09:00 KST)
+- Schedule: 매일 04:00 KST (macOS launchd, OCI 이관 후 systemd)
 
 ## Commands
 
@@ -43,7 +43,7 @@ discover → papers.json → download → pdfs/ → convert → markdown/ → an
 - **스코어링**: `(upvotes/max) * 0.7 + (citations/max) * 0.3`으로 HF와 S2 합산
 - **Fallback**: PDF 다운로드 실패 시 S2 openAccessPdf → 변환 실패 시 abstract로 대체
 - **멱등성**: 각 단계에서 출력 파일이 이미 존재하면 스킵
-- **멀티 프로바이더**: config.yaml의 `provider` 필드로 claude/codex/cursor CLI 전환 가능
+- **멀티 프로바이더**: config.yaml의 `provider` 필드로 claude/codex/cursor CLI 전환 가능, 현재 기본은 cursor
 - **분석 호출**: Claude 사용 시 CLAUDECODE 환경변수 해제로 중첩 세션 방지
 - **bkit footer 제거**: Claude 출력의 bkit 보고 블록 자동 제거 (Claude provider 전용)
 - **Paper 최대 길이**: 80,000자 초과 시 truncate (컨텍스트 제한)

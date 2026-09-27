@@ -1,0 +1,12 @@
+[Unit]
+Description=Run Research Wiki daily at 04:00 KST
+
+[Timer]
+OnCalendar=*-*-* 04:00:00 Asia/Seoul
+AccuracySec=1min
+RandomizedDelaySec=0
+Persistent=false
+Unit=research-wiki.service
+
+[Install]
+WantedBy=timers.target

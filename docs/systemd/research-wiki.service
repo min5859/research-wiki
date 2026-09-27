@@ -1,0 +1,26 @@
+[Unit]
+Description=Research Wiki paper analysis and GitHub Wiki publication
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=oneshot
+User=wiki-publisher
+Group=wiki-publisher
+WorkingDirectory=/srv/research-wiki
+Environment=HOME=/home/wiki-publisher
+Environment=PATH=/home/wiki-publisher/.local/bin:/usr/local/bin:/usr/bin:/bin
+Environment=TZ=Asia/Seoul
+Environment=GIT_TERMINAL_PROMPT=0
+EnvironmentFile=-/srv/research-wiki/config/.env
+ExecStartPre=/usr/bin/test -x /srv/research-wiki/.venv/bin/python
+ExecStartPre=/usr/bin/test -x /home/wiki-publisher/.local/bin/agent
+ExecStartPre=/usr/bin/git -C /srv/research-wiki pull --ff-only origin main
+ExecStart=/srv/research-wiki/run.sh
+TimeoutStartSec=30min
+KillMode=mixed
+UMask=0077
+Nice=10
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=research-wiki

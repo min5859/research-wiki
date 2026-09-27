@@ -6,13 +6,24 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 LOG_DIR="$SCRIPT_DIR/logs"
 LOG_FILE="$LOG_DIR/cron.log"
 
+if [ -f "$SCRIPT_DIR/config/.env" ]; then
+    set -a
+    source "$SCRIPT_DIR/config/.env"
+    set +a
+fi
+
 # Activate venv if present (for cron environment)
 if [ -f "$SCRIPT_DIR/.venv/bin/activate" ]; then
     source "$SCRIPT_DIR/.venv/bin/activate"
 fi
 
-# Ensure Homebrew, nvm, and claude CLI are in PATH (cron doesn't load user profile)
-export PATH="/opt/homebrew/bin:$HOME/.local/bin:$HOME/.nvm/versions/node/$(ls "$HOME/.nvm/versions/node/" 2>/dev/null | tail -1)/bin:$PATH"
+# Ensure user-installed AI CLIs and optional Homebrew/nvm installs are visible.
+for node_bin in "$HOME"/.nvm/versions/node/*/bin; do
+    if [ -d "$node_bin" ]; then
+        PATH="$node_bin:$PATH"
+    fi
+done
+export PATH="/opt/homebrew/bin:$HOME/.local/bin:/usr/local/bin:$PATH"
 
 mkdir -p "$LOG_DIR" "$SCRIPT_DIR/data/pdfs" "$SCRIPT_DIR/data/markdown" "$SCRIPT_DIR/data/analysis"
 
@@ -79,8 +90,14 @@ fi
 rm -f "$STEP4_MARKER"
 
 # Step 5: Publish to GitHub Wiki
-log "Step 5/5: Publishing to GitHub Wiki..."
-if "$SCRIPT_DIR/.venv/bin/python" "$SCRIPT_DIR/src/publish.py" 2>>"$LOG_FILE"; then
+PUBLISH_ARGS=()
+if [ "${RESEARCH_WIKI_DRY_RUN:-0}" = "1" ]; then
+    PUBLISH_ARGS+=(--dry-run)
+    log "Step 5/5: Validating GitHub Wiki output (dry-run)..."
+else
+    log "Step 5/5: Publishing to GitHub Wiki..."
+fi
+if "$SCRIPT_DIR/.venv/bin/python" "$SCRIPT_DIR/src/publish.py" "${PUBLISH_ARGS[@]}" 2>>"$LOG_FILE"; then
     log "Step 5 complete"
 else
     error "Step 5 failed: publish.py"
