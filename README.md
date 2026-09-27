@@ -2,6 +2,9 @@
 
 매주 트렌딩 AI 논문 2편을 자동 수집, 분석하여 [GitHub Wiki](https://github.com/min5859/research-wiki/wiki)에 발행하는 파이프라인.
 
+OCI 이관 계획과 진행 기록은 [`docs/OCI-MIGRATION.md`](docs/OCI-MIGRATION.md)를
+참고하세요.
+
 ## 동작 흐름
 
 ```
