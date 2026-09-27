@@ -152,3 +152,33 @@ worktree, Wiki clone, history와 미푸시 commit을 검사하며 자동으로 �
 
 다음 단계는 코드 commit/push 후 OCI 비활성 설치와 서버 dry-run입니다. 실제 writer
 컷오버는 OSS Radar의 2026-09-28 05:00 KST 정기 실행 확인 뒤에만 진행합니다.
+
+### 2026-09-27 OCI 비활성 설치
+
+- `/srv/research-wiki`를 `wiki-publisher` 소유로 clone
+- Python 3.12 venv와 ARM64 PyMuPDF/PyMuPDF4LLM 의존성 설치
+- 정리된 history 362개를 SHA-256 일치 확인 후 전송
+- Git 작성자를 `Wooki Min <min5859@gmail.com>`으로 설정
+- systemd service/timer 설치와 `systemd-analyze verify` 통과
+- `research-wiki.timer`는 `disabled`, `inactive` 상태로 유지
+- Cursor 로그인, 단위 테스트 10개, compileall, `bash -n` 통과
+- OCI 전체 dry-run 성공: 후보/다운로드/변환/분석 각 2개
+- 변환 후 PDF 0개, 분석 2개, history 362개 유지
+- dry-run은 Wiki clone을 만들거나 원격 Wiki를 변경하지 않음
+
+설치 중 첫 clone은 `wiki-publisher`가 `/srv` 바로 아래 디렉터리를 생성할 권한이
+없어 다음 오류로 중단됐습니다.
+
+```text
+fatal: could not create work tree dir '/srv/research-wiki': Permission denied
+```
+
+파일이나 timer 변경은 일어나지 않았습니다. root가 빈 `/srv/research-wiki`를
+`wiki-publisher` 소유로 생성한 뒤 clone을 재실행해 정상 완료했습니다.
+
+남은 준비 작업:
+
+1. `research-wiki` 저장소 범위의 `GITHUB_WIKI_TOKEN` 입력
+2. `scripts/check_wiki_access.py` push dry-run
+3. 컷오버 직전 로컬 최신 history 재동기화
+4. OSS Radar 첫 정기 실행 성공 확인 후 writer 전환
