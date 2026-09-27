@@ -23,11 +23,21 @@ PAPERS_FILE = ROOT / "data" / "papers.json"
 MD_DIR = ROOT / "data" / "markdown"
 
 
+def delete_pdf_if_converted(pdf_path: str, arxiv_id: str) -> None:
+    """Drop PDF once markdown exists — arXiv can re-fetch if needed."""
+    pdf = Path(pdf_path)
+    md = MD_DIR / f"{arxiv_id}.md"
+    if pdf.exists() and md.exists() and md.stat().st_size > 100:
+        pdf.unlink()
+        log.info("Deleted PDF (markdown retained): %s", pdf)
+
+
 def convert_pdf(pdf_path: str, arxiv_id: str) -> Path | None:
     """Convert a PDF file to Markdown."""
     dest = MD_DIR / f"{arxiv_id}.md"
     if dest.exists() and dest.stat().st_size > 100:
         log.info("Markdown already exists: %s", dest)
+        delete_pdf_if_converted(pdf_path, arxiv_id)
         return dest
 
     try:
@@ -35,6 +45,7 @@ def convert_pdf(pdf_path: str, arxiv_id: str) -> Path | None:
         md_text = pymupdf4llm.to_markdown(pdf_path)
         dest.write_text(md_text, encoding="utf-8")
         log.info("Saved %s (%d chars)", dest, len(md_text))
+        delete_pdf_if_converted(pdf_path, arxiv_id)
         return dest
     except Exception as e:
         log.error("Conversion failed for %s: %s", pdf_path, e)
