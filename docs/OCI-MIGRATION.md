@@ -178,7 +178,12 @@ fatal: could not create work tree dir '/srv/research-wiki': Permission denied
 
 남은 준비 작업:
 
-1. `research-wiki` 저장소 범위의 `GITHUB_WIKI_TOKEN` 입력
-2. `scripts/check_wiki_access.py` push dry-run
-3. 컷오버 직전 로컬 최신 history 재동기화
-4. OSS Radar 첫 정기 실행 성공 확인 후 writer 전환
+1. 컷오버 직전 로컬 최신 history 재동기화
+2. OSS Radar 첫 정기 실행 성공 확인 후 writer 전환
+
+### 2026-09-27 Wiki 쓰기 인증 확인
+
+- `research-wiki` 저장소 쓰기 권한이 있는 fine-grained PAT 설정
+- `scripts/check_wiki_access.py` 성공
+- 임시 clone의 `git push --dry-run`만 수행했으며 원격 Wiki 변경 없음
+- `research-wiki.timer`는 계속 `disabled`, `inactive`
