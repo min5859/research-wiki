@@ -89,15 +89,19 @@ else
 fi
 rm -f "$STEP4_MARKER"
 
-# Step 5: Publish to GitHub Wiki
-PUBLISH_ARGS=()
-if [ "${RESEARCH_WIKI_DRY_RUN:-0}" = "1" ]; then
-    PUBLISH_ARGS+=(--dry-run)
-    log "Step 5/5: Validating GitHub Wiki output (dry-run)..."
-else
-    log "Step 5/5: Publishing to GitHub Wiki..."
-fi
-if "$SCRIPT_DIR/.venv/bin/python" "$SCRIPT_DIR/src/publish.py" "${PUBLISH_ARGS[@]}" 2>>"$LOG_FILE"; then
+# Step 5: Publish to GitHub Wiki. Avoid an empty Bash array here: macOS ships
+# Bash 3.2, where expanding an empty array under `set -u` raises an error.
+run_publish() {
+    if [ "${RESEARCH_WIKI_DRY_RUN:-0}" = "1" ]; then
+        log "Step 5/5: Validating GitHub Wiki output (dry-run)..."
+        "$SCRIPT_DIR/.venv/bin/python" "$SCRIPT_DIR/src/publish.py" --dry-run 2>>"$LOG_FILE"
+    else
+        log "Step 5/5: Publishing to GitHub Wiki..."
+        "$SCRIPT_DIR/.venv/bin/python" "$SCRIPT_DIR/src/publish.py" 2>>"$LOG_FILE"
+    fi
+}
+
+if run_publish; then
     log "Step 5 complete"
 else
     error "Step 5 failed: publish.py"
