@@ -231,3 +231,19 @@ run.sh: line 100: PUBLISH_ARGS[@]: unbound variable
 - 다음 실행: 2026-09-29 04:00 KST
 
 다음 2회 정기 실행과 Wiki 게시를 확인하면 이관 완료로 판정합니다.
+
+### 2026-09-29 OCI 첫 정기 실행
+
+`wiki-publisher` 계정과 systemd timer로 실행된 첫 실제 게시가 성공했습니다.
+
+- 시작: 04:00:27 KST
+- 완료: 04:01:53 KST, 86초
+- 수집, 다운로드, 변환, Cursor 분석, Wiki 게시 전 단계 성공
+- Wiki commit `4b30e5c` `Weekly AI Paper Review - 2026-09-29`
+- history 364개에서 366개로 증가
+- `/srv/research-wiki` worktree clean
+- Mac LaunchAgent는 계속 disabled
+- `research-wiki.timer`는 enabled/active
+
+9월 30일 04:00 KST 두 번째 실행까지 성공하면 Research Wiki 이관 완료로
+판정합니다.
