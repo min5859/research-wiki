@@ -1,5 +1,17 @@
 # Research Wiki OCI 마이그레이션 계획
 
+2026-10-04 분석 모델 변경: `analysis.provider: cursor`를 유지하고
+`analysis.cursor.model`을 `claude-sonnet-5-medium`에서
+`claude-sonnet-5-5-medium`으로 올렸습니다. 기존 Medium 추론 수준은 유지합니다.
+OCI `wiki-publisher`의 `agent --list-models`로 지원 여부를 확인했습니다.
+단위 테스트 12개와 OCI의 게시 없는 한국어 모델 연결 검증이 통과했습니다.
+아래 Sonnet 5 표기는 이관 당시의 기록이며 현재 설정은 `config.yaml`이 기준입니다.
+모델 연결만 검증하며 전체 파이프라인 재실행·재게시·history 초기화는 하지 않습니다.
+이미 존재하는 분석 결과는 기존 멱등성 정책에 따라 재사용합니다.
+
+모델 근거: [Cursor Sonnet 5.5 공식 문서](https://prod.cursor.com/docs/models/claude-sonnet-5-5)
+(확인: 2026-10-04). 실제 CLI 식별자는 OCI 계정의 모델 목록에서 확인합니다.
+
 ## 1. 목적
 
 macOS에서 매일 실행 중인 Research Wiki 게시 파이프라인을 OCI의 공용
